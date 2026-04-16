@@ -1,0 +1,14 @@
+{
+  "features": {
+    "lag_1": "float",             // Sales on previous day for same item
+    "rolling_mean_3": "float",    // Average of last 3 days' sales (excluding today)
+    "day_of_week": "int",         // 0 = Monday, 6 = Sunday
+    "is_holiday": "bool",         // Whether the day is a holiday (True/False)
+    "promotion_flag": "bool",     // Whether a promotion is running on this day
+    "weather_temp": "float",      // Temperature of the day (in °C)
+    
+    // Optional metadata (for display/reference)
+    "item_id": "string",          // Product SKU or name (optional, used in output)
+    "timestamp": "string (YYYY-MM-DD)" // Date of prediction (optional, used in reports)
+  }
+}

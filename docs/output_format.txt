@@ -1,0 +1,10 @@
+{
+  "predicted_sales": "float",         // Model's predicted demand for that day
+  "reorder_flag": "bool",             // Whether to reorder based on predicted sales
+  "suggested_order_qty": "int",       // How many units to reorder
+  "inventory_level": "int",           // Inventory available (from input)
+  
+  // Echoes back (for reference)
+  "item_id": "string",
+  "timestamp": "string (YYYY-MM-DD)"
+}
