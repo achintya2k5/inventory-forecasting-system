@@ -1,64 +1,248 @@
-# AWS Hackathon Demand Forecasting
+# Demand Forecasting and Inventory Recommendation System
 
-A small end-to-end Python project that forecasts item-level sales and generates inventory reorder recommendations.
+Production-ready demand forecasting service with a reusable ML pipeline, CLI workflows, and FastAPI inference endpoints.
 
-## What It Does
+## Architecture Overview
 
-- Loads historical sales data from `training_data.csv`
-- Cleans data and creates demand forecasting features
-- Trains (or loads) an XGBoost regressor
-- Reports train/validation/test MAE
-- Produces `inventory_recommendations.csv` with reorder flags and suggested order quantity
+The repository provides three aligned layers:
+
+1. Training and prediction pipeline
+- Data cleaning and feature engineering
+- Scikit-learn preprocessing + RandomForest regression model
+- Model artifact and metadata export
+- Inventory recommendation generation
+
+2. CLI interface
+- Train mode for model training and artifact creation
+- Predict mode for local batch inference from JSON payloads
+
+3. API service
+- Health endpoint for service readiness
+- Predict endpoint for model inference via HTTP
+
+## Features
+
+- End-to-end demand forecasting workflow
+- Feature engineering with lag and rolling demand signals
+- Unified preprocessing and model pipeline with scikit-learn
+- Inventory reorder decision support logic
+- FastAPI service for inference deployment
+- CLI-based local experimentation and automation
+- Unit tests for model and utility behavior
+- Docker support for API deployment
+- GitHub Actions CI for test automation
+
+## Tech Stack
+
+- Python 3.10+
+- Pandas and NumPy
+- Scikit-learn
+- FastAPI and Uvicorn
+- Pytest
+- Docker
+- GitHub Actions
+
+## Installation
+
+1. Clone the repository
+
+~~~bash
+git clone https://github.com/achintya2k5/inventory-forecasting-system.git
+cd inventory-forecasting-system
+~~~
+
+2. Create and activate a virtual environment
+
+~~~powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+~~~
+
+3. Install dependencies
+
+~~~powershell
+pip install -r requirements.txt
+~~~
+
+For development tooling:
+
+~~~powershell
+pip install -r requirements-dev.txt
+~~~
+
+## Usage
+
+### CLI Training
+
+Train a model from local CSV data and generate model artifacts.
+
+~~~powershell
+python main.py --mode train --data path\to\training_data.csv --label sales
+~~~
+
+Generated artifacts:
+- model.pkl
+- model_metadata.json
+- inventory_recommendations.csv (when inventory_level is available in training data)
+
+### CLI Prediction
+
+Run local predictions from either JSON string input or JSON file path.
+
+~~~powershell
+python main.py --mode predict --model-path model.pkl --input "[{\"lag_1\": 10, \"rolling_mean_3\": 12, \"day_of_week\": 2, \"is_holiday\": 0, \"promotion_flag\": 1, \"weather_temp\": 30}]"
+~~~
+
+Or using a JSON file:
+
+~~~powershell
+python main.py --mode predict --model-path model.pkl --input data\sample_input.json
+~~~
+
+### API Usage
+
+Start the API:
+
+~~~powershell
+uvicorn api.main:app --host 0.0.0.0 --port 8000
+~~~
+
+Health check:
+
+~~~bash
+curl http://localhost:8000/health
+~~~
+
+Prediction request:
+
+~~~bash
+curl -X POST "http://localhost:8000/predict" \
+	-H "Content-Type: application/json" \
+	-d '{
+		"data": [
+			{
+				"lag_1": 10,
+				"rolling_mean_3": 12,
+				"day_of_week": 2,
+				"is_holiday": 0,
+				"promotion_flag": 1,
+				"weather_temp": 30
+			}
+		]
+	}'
+~~~
 
 ## Project Structure
 
-- `main.py`: CLI entrypoint
-- `ml_data_loader/loader.py`: data loading and pipeline orchestration
-- `ml_data_loader/model.py`: prediction runner and evaluation
-- `ml_data_loader/utils.py`: cleaning, EDA, training, metadata, inventory logic
-- `docs/input_format.txt`: expected feature schema
-- `docs/output_format.txt`: expected output schema
+~~~text
+.
+├── api/
+│   └── main.py
+├── data/
+│   └── .gitkeep
+├── docs/
+│   ├── input_format.txt
+│   └── output_format.txt
+├── ml_data_loader/
+│   ├── __init__.py
+│   ├── loader.py
+│   ├── model.py
+│   ├── preprocess.py
+│   └── utils.py
+├── tests/
+│   ├── conftest.py
+│   ├── test_model.py
+│   └── test_utils.py
+├── .github/workflows/
+│   └── ci.yml
+├── .gitignore
+├── Dockerfile
+├── LICENSE
+├── main.py
+├── pyproject.toml
+├── requirements-dev.txt
+├── requirements.txt
+└── README.md
+~~~
 
-## Quick Start
+## Input and Output Schema
 
-### 1. Create and activate a virtual environment
+Reference files:
+- docs/input_format.txt
+- docs/output_format.txt
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
+API prediction input schema:
 
-### 2. Install dependencies
+~~~json
+{
+	"data": [
+		{
+			"lag_1": 42.0,
+			"rolling_mean_3": 39.5,
+			"day_of_week": 2,
+			"is_holiday": 0,
+			"promotion_flag": 1,
+			"weather_temp": 29.8
+		}
+	]
+}
+~~~
 
-```powershell
-pip install -r requirements.txt
-```
+API prediction output schema:
 
-### 3. Run the pipeline (non-interactive)
+~~~json
+{
+	"predictions": [43.21]
+}
+~~~
 
-```powershell
-python main.py --cutoff 2024-05-20 --retrain
-```
+Inventory recommendation file schema:
 
-You can also run without a cutoff date. It will use an automatic 80/20 temporal split:
+~~~text
+item_id, inventory_level, predicted_sales, reorder_flag, suggested_order_qty
+~~~
 
-```powershell
-python main.py --retrain
-```
+## Model Details
 
-## Outputs
-
-- `inventory_recommendations.csv`: predicted demand and reorder suggestions
-- `trained_model.pkl`: saved model artifact
-- `model_metadata.json`: model metadata (feature list, train date, train/validation MAE)
+- Model: RandomForestRegressor
+- Preprocessing:
+	- Numeric features: median imputation and scaling
+	- Categorical features: mode imputation and one-hot encoding
+- Engineered features:
+	- lag_1
+	- rolling_mean_3
+	- day_of_week
+	- is_holiday
+	- promotion_flag
+	- weather_temp
+- Evaluation metric: Mean Absolute Error (MAE)
 
 ## Testing
 
-```powershell
+Run all tests:
+
+~~~powershell
 pytest -q
-```
+~~~
 
-## Notes
+## Docker
 
-- Do not commit real or sensitive data files.
-- `training_data.csv` should be local-only for experimentation, unless it is synthetic/public data.
+Build image:
+
+~~~bash
+docker build -t demand-forecasting-api .
+~~~
+
+Run container:
+
+~~~bash
+docker run --rm -p 8000:8000 demand-forecasting-api
+~~~
+
+## Future Improvements
+
+- Add model version registry and artifact tracking
+- Add automated drift and data quality monitoring
+- Add cross-validation and hyperparameter tuning workflows
+- Add API authentication and rate limiting
+- Add contract tests for API schema validation

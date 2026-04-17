@@ -1,24 +1,39 @@
-# Python
+# Python cache and build artifacts
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+*.so
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Packaging
+build/
+dist/
+*.egg-info/
 
 # Virtual environments
 .venv/
 venv/
 env/
 
-# IDE
+# IDE and editor settings
 .vscode/
+.idea/
 
-# Model/data artifacts
-trained_model.pkl
+# Local model and generated outputs
+model.pkl
 model_metadata.json
 inventory_recommendations.csv
-*.csv
 
-# OS
+# Local datasets
+training_data.csv
+data/*.csv
+!data/.gitkeep
+
+# OS junk
 .DS_Store
 Thumbs.db
