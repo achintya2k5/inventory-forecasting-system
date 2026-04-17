@@ -101,12 +101,16 @@ def run_training_pipeline(
         label_column=label,
     )
 
-    if "inventory_level" in df.columns:
+    if "inventory_level" in df.columns and model_type == "regression":
         preds = model.predict(X)
         preds = np.asarray(preds).ravel()
         df["predicted_sales"] = preds
         optimized_inventory = recommend_inventory_actions(df)
         optimized_inventory.to_csv(inventory_output_path, index=False)
         LOGGER.info("Inventory recommendations saved to %s", inventory_output_path)
+    elif "inventory_level" in df.columns:
+        LOGGER.info(
+            "Skipping inventory recommendations for classification model type."
+        )
 
     return model, metrics

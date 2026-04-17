@@ -4,8 +4,8 @@ import json
 from datetime import datetime, timezone
 
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.metrics import accuracy_score, mean_absolute_error
 from sklearn.pipeline import Pipeline
 
 from ml_data_loader.preprocess import build_preprocessor
@@ -13,15 +13,27 @@ from ml_data_loader.preprocess import build_preprocessor
 LOGGER = logging.getLogger(__name__)
 
 
+def _is_classification_target(y) -> bool:
+    return int(pd.Series(y).nunique(dropna=True)) < 20
+
+
 def train_model(X, y):
     preprocessor = build_preprocessor(X)
 
-    model = RandomForestRegressor(
-        n_estimators=300,
-        random_state=42,
-        n_jobs=-1,
-    )
-    model_type = "regression"
+    if _is_classification_target(y):
+        model = RandomForestClassifier(
+            n_estimators=300,
+            random_state=42,
+            n_jobs=-1,
+        )
+        model_type = "classification"
+    else:
+        model = RandomForestRegressor(
+            n_estimators=300,
+            random_state=42,
+            n_jobs=-1,
+        )
+        model_type = "regression"
 
     pipeline = Pipeline([
         ("preprocessor", preprocessor),
@@ -34,6 +46,8 @@ def train_model(X, y):
 
 def evaluate_model(model, x_test, y_test):
     preds = model.predict(x_test)
+    if hasattr(model, "predict_proba"):
+        return {"accuracy": float(accuracy_score(y_test, preds))}
     return {"mae": float(mean_absolute_error(y_test, preds))}
 
 

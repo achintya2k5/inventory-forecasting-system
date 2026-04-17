@@ -96,8 +96,14 @@ if __name__ == "__main__":
         df = pd.DataFrame(data)
 
         preds = model.predict(df)
-
-        print(preds.tolist())
+        if hasattr(model, "predict_proba"):
+            probs = model.predict_proba(df)
+            print(json.dumps({
+                "predictions": preds.tolist(),
+                "probabilities": probs.tolist(),
+            }))
+        else:
+            print(preds.tolist())
 
     else:
         raise ValueError("Invalid mode. Use 'train' or 'predict'.")
